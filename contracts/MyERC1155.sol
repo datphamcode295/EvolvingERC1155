@@ -16,26 +16,23 @@ contract EvolvingERC1155 is ERC1155, Ownable {
     // Mapping to track if a signature has been used
     mapping(bytes => bool) public usedSignatures;
 
-    // URIs for different token types
-    string private uri0;
-    string private uri1;
-
-    constructor(
-        string memory _uri0,
-        string memory _uri1
-    ) ERC1155("") Ownable(msg.sender) {
-        uri0 = _uri0;
-        uri1 = _uri1;
+    constructor() ERC1155("https://ipfs.io/ipfs/bafybeig7kbahfknc5hldgkfhwktao5l4xm3ppphodatxhy2obfh27nyefe/{id}.json") Ownable(msg.sender) {
+        // Mint initial supply of basic NFTs
+        _mint(msg.sender, BASIC_NFT, 2, "");
+        _mint(msg.sender, EVOLVED_NFT, 1, "");
     }
 
     // Override uri function to return different URIs based on token ID
-    function uri(uint256 tokenId) public view override returns (string memory) {
-        if (tokenId == BASIC_NFT) {
-            return uri0;
-        } else if (tokenId == EVOLVED_NFT) {
-            return uri1;
-        }
-        revert("Invalid token ID");
+    function uri(uint256 tokenId) public pure override returns (string memory) {
+        return string(abi.encodePacked(
+            "https://ipfs.io/ipfs/bafybeig7kbahfknc5hldgkfhwktao5l4xm3ppphodatxhy2obfh27nyefe/",
+            Strings.toString(tokenId),
+            ".json"
+        ));
+    }
+
+    function contractURI() public pure returns (string memory) {
+        return "https://ipfs.io/ipfs/bafybeig7kbahfknc5hldgkfhwktao5l4xm3ppphodatxhy2obfh27nyefe/collection.json";
     }
 
     // Function to generate message hash for claiming NFT
@@ -62,15 +59,6 @@ contract EvolvingERC1155 is ERC1155, Ownable {
         _mint(msg.sender, BASIC_NFT, 1, "");
     }
 
-    // Updated batch claim function
-    function batchClaim(uint256[] memory indices, bytes[] memory signatures) public {
-        require(indices.length == signatures.length, "Arrays length mismatch");
-        uint256 amount = signatures.length;
-        for(uint256 i = 0; i < amount; i++) {
-            claimNFT(indices[i], signatures[i]);
-        }
-    }
-
     // Function to evolve two basic NFTs into one evolved NFT
     function evolveNFTs() public {
         // Check if user has at least 2 basic NFTs
@@ -81,15 +69,6 @@ contract EvolvingERC1155 is ERC1155, Ownable {
         
         // Mint one evolved NFT
         _mint(msg.sender, EVOLVED_NFT, 1, "");
-    }
-
-    // Admin functions to update URIs
-    function setURI0(string memory newURI) public onlyOwner {
-        uri0 = newURI;
-    }
-    
-    function setURI1(string memory newURI) public onlyOwner {
-        uri1 = newURI;
     }
 
     // Function to check if a signature has been used
